@@ -13,8 +13,29 @@ type_mapping = {
 
 class MySyntaxVisitor(ast.NodeVisitor):
     def visit_Assign(self, node):
+
         variable_name = node.targets[0].id
         value = self.visit(node.value)
+
+        return {"type": "variable_assignment", "name": variable_name, "value": value}
+    def visit_AnnAssign(self, node):
+        if isinstance(node.target, ast.Name):
+            variable_name = node.target.id
+        elif isinstance(node.target, ast.Attribute):
+            variable_name = node.target.attr
+        else:
+            raise TypeError(f"Unsupported target type in AnnAssign: {type(node.target)}")
+
+        annotation = self.visit(node.annotation)
+        value = self.visit(node.value)
+
+        if annotation not in type_mapping:
+            raise TypeError(f"Unknown type annotation: {annotation}")
+
+        expected_type = type_mapping[annotation]
+
+        if not isinstance(value, expected_type):
+            raise TypeError(f"Type mismatch for variable '{variable_name}'. Expected {expected_type}, but got {type(value)}")
 
         return {"type": "variable_assignment", "name": variable_name, "value": value}
 
@@ -121,48 +142,55 @@ class MySyntaxVisitor(ast.NodeVisitor):
         return super().generic_visit(node)
 
 
-    def visit_AnnAssign(self, node):
-        variable_name = node.target.id
-        annotation = self.visit(node.annotation)
-        value = self.visit(node.value)
-
-        if annotation not in type_mapping:
-            raise TypeError(f"Unknown type annotation: {annotation}")
-
-        expected_type = type_mapping[annotation]
-
-        if not isinstance(value, expected_type):
-            raise TypeError(f"Type mismatch for variable '{variable_name}'. Expected {expected_type}, but got {type(value)}")
-
-        return {"type": "variable_assignment", "name": variable_name, "value": value}
-
-
-
 def preprocess_code(code):
     # Define the macro pattern with optional parameters
-    macro_pattern = r"macro (\w+)(?:\((.*?)\))?\n(.*?)\nend"
+    macros_pattern = r"macro (\w+)(?:\((.*?)\))?{\n(.*?)\n}"
+
+
+    func_pattern = r"func (.*)\((.*?)\){\n(.*?)\n}"
 
     # Find all occurrences of the macro pattern in the code
-    matches = re.finditer(macro_pattern, code, re.DOTALL)
+    macros_matches = re.finditer(macros_pattern, code, re.DOTALL)
 
     # Replace macro occurrences with their corresponding code
-    for match in matches:
+    for match in macros_matches:
         macro_name = match.group(1)
         parameters = match.group(2)
-        macro_code = match.group(3)
+        body = match.group(3)
 
         # Check if the macro has parameters
         if parameters:
             # You can choose to handle parameters as needed
             raise ValueError(f"Macros should not take parameters: {macro_name}({parameters})")
         else:
-            code = code.replace(match.group(0), f'def {macro_name}():\n{macro_code}')
+            code = code.replace(match.group(0), f'def {macro_name}():\n{body}')
+
+
+    func_matches = re.finditer(func_pattern, code, re.DOTALL)
+    for match in func_matches:
+        name = match.group(1)
+        args = match.group(2)
+        body = match.group(3)
+
+        # Process function parameters with type annotations
+        args_with_types = []
+        for arg in args.split(','):
+            arg_parts = arg.strip().split(':')
+            if len(arg_parts) == 2:
+                arg_name, arg_type = arg_parts
+                args_with_types.append(f"{arg_name}: {arg_type}")
+            else:
+                args_with_types.append(arg)
+
+        code = code.replace(match.group(0), f"def {name}({', '.join(args_with_types)}):\n{body}")
 
     return code
 
 
+
 def parse_custom_syntax(code):
     code = preprocess_code(code)
+
     tree = ast.parse(code)
     visitor = MySyntaxVisitor()
     result = [visitor.visit(stmt) for stmt in tree.body]

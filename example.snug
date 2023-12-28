@@ -1,5 +1,2 @@
-macro main(a)
-    print("hello")
-end
-
-main()
+x:int = 30
+print(type(x))

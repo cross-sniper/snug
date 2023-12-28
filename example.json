@@ -1,21 +1,20 @@
 [
     {
-        "type": "function_definition",
-        "name": "main",
-        "parameters": [],
-        "body": [
-            {
-                "type": "function_call",
-                "name": "print",
-                "args": [
-                    "hello"
-                ]
-            }
-        ]
+        "type": "variable_assignment",
+        "name": "x",
+        "value": 30
     },
     {
         "type": "function_call",
-        "name": "main",
-        "args": []
+        "name": "print",
+        "args": [
+            {
+                "type": "function_call",
+                "name": "type",
+                "args": [
+                    "x"
+                ]
+            }
+        ]
     }
 ]

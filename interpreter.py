@@ -19,6 +19,8 @@ class MyInterpreter:
             return self.evaluate_comparison(statement)
         elif statement['type'] == "function_definition":
             return self.execute_function_definition(statement)
+        elif statement['type'] == "namespace":
+            return self.execute_namespace(statement)
         else:
             raise NotImplementedError(f"Interpreter does not support statements of type {statement['type']}")
 
@@ -80,7 +82,6 @@ class MyInterpreter:
         else:
             raise ValueError(f"Unsupported function call: {func_name}")
 
-    # Format(<string to replace>, <elements>)
     def format_string(self, args):
         def replace_match(match):
             index = int(match.group(1))
@@ -113,6 +114,12 @@ class MyInterpreter:
             return left != right
         else:
             raise ValueError(f"Unsupported comparison operation: {op}")
+
+    def execute_namespace(self, namespace):
+        namespace_name = namespace["name"]
+        body = namespace["body"]
+        # You might want to do something specific with the namespace, depending on your requirements
+        print(f"Namespace {namespace_name} executed with body: {body}")
 
 def interpret_custom_syntax(statements):
     interpreter = MyInterpreter()
