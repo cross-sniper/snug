@@ -1,0 +1,21 @@
+[
+    {
+        "type": "function_definition",
+        "name": "main",
+        "parameters": [],
+        "body": [
+            {
+                "type": "function_call",
+                "name": "print",
+                "args": [
+                    "hello"
+                ]
+            }
+        ]
+    },
+    {
+        "type": "function_call",
+        "name": "main",
+        "args": []
+    }
+]

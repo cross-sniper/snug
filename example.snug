@@ -1,0 +1,5 @@
+macro main(a)
+    print("hello")
+end
+
+main()
